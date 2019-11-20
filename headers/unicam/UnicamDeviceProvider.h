@@ -26,3 +26,4 @@ private:
 
 };
 #endif //LIBUNICAM_UNICAMDEVICEPROVIDER_H
+

@@ -7,10 +7,30 @@
 
 
 #include "unicam/UnicamDeviceProvider.h"
+#include "../headers/io_interface.h"
 
-class XtionProvider : UnicamDeviceProvider{
+class XtionProvider : public UnicamDeviceProvider{
+public:
+    XtionProvider();
+    void initializeCameras();
+    std::list<std::string> getConnectedCameraTags(); //returns the serial number or a number representing the camera
+    UnicamCamera * getCameraByTag(std::string cameraTag);
+    UnicamDevices getCameraType(); //Returns the type of current camera
+    bool isMultSupported(); //Returns true if multicam is supported
 
+    void spinOnce();
+
+private:
+    std::string camera_name;
+    std::string device_uri;
+
+    openni::Status ni_status = openni::STATUS_OK;
+    openni::Device device;
+    openni::VideoStream *depth, *color;
+
+    unicam_xtion::IOInterface* iface;
 };
+
 
 
 #endif //LIBUNICAM_XTIONPROVIDER_H

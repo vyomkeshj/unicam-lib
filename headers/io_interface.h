@@ -11,7 +11,7 @@
 
 #include <OpenNI.h>
 
-namespace xtion2_ros
+namespace unicam_xtion
 {
 class IOInterface
 {
@@ -64,6 +64,6 @@ public:
     return color_frame_.isValid() && depth_frame_.isValid();
   }
 };
-}  // namespace xtion2_ros
+}  // namespace unicam_xtion
 
 #endif  // XTION2_ROS_IO_INTERFACE_H

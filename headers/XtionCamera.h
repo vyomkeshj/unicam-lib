@@ -6,10 +6,20 @@
 #define LIBUNICAM_XTIONCAMERA_H
 
 
+#include <OpenNI.h>
 #include "unicam/UnicamCamera.h"
+#include "io_interface.h"
 
-class XtionCamera : UnicamCamera {
+class XtionCamera : public UnicamCamera {
+    cv::Mat getRGBFrame();
+     cv::Mat getIRFrame();
+     cv::Mat getDepthFrame();
 
+public:
+    XtionCamera(unicam_xtion::IOInterface *inf);
+
+private:
+    unicam_xtion::IOInterface *inf;
 };
 
 

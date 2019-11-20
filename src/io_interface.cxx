@@ -3,7 +3,7 @@
 #include <OpenNI.h>
 #include <iostream>
 
-namespace xtion2_ros
+namespace unicam_xtion
 {
 IOInterface::IOInterface(openni::Device& device, openni::VideoStream& depth, openni::VideoStream& color)
   : device_(device), depth_stream_(depth), color_stream_(color), color_new(false), depth_new(false)
