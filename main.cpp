@@ -1,23 +1,23 @@
 #include<iostream>
-#include<fstream>
-#include<cstdlib>
 #include "headers/unicam/UnicamDeviceProvider.h"
 #include "headers/RealsenseProvider.h"
 #include "headers/XtionProvider.h"
+#include "headers/orientationControl/CameraOrientationController.h"
 
 using namespace std;
 
-int main()
-{
+int main() {
     UnicamDeviceProvider *xtion = new XtionProvider();
     xtion->initializeCameras();
-    UnicamCamera *camera = xtion->getCameraByTag("912112073363");
-    cv::Mat matrix = camera->getDepthFrame();
-    matrix = (1.0000/4000.0)* matrix;
-    std::cout<<matrix;
-    cv::imshow("cert", matrix);
-    cv::waitKey(100000);
+    UnicamCamera *camera = xtion->getCameraByTag("817612070540");
+    CameraOrientationController* controller = new CameraOrientationController("/dev/ttyACM0");
+    while (true) {
+        xtion->spinOnce();
+        cv::Mat matrix = camera->getDepthFrame();
+        controller->alignCamera(matrix);
 
-    return(0);
+        //std::cout<<"y vect 0= "<<normal.val[0]<<" 1 = "<<normal.val[1]<<" 3 = "<<normal.val[2]<<std::endl;
+        //std::cout << matrix;
+    }                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      return (0);
+
 }
-

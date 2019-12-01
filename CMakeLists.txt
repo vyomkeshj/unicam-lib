@@ -53,5 +53,5 @@ add_executable(libunicam
         src/RealsenseProvider.cpp
         src/RealsenseDevice.cpp
         headers/RealsenseCamera.h
-        headers/XtionCamera.h headers/XtionProvider.h src/XtionProvider.cpp src/XtionCamera.cpp)
+        headers/XtionCamera.h headers/XtionProvider.h src/XtionProvider.cpp src/XtionCamera.cpp src/CameraOrientationController.cpp headers/orientationControl/CameraOrientationController.h)
 target_link_libraries(libunicam ${LINK_LIBS})

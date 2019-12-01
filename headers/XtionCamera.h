@@ -14,6 +14,7 @@ class XtionCamera : public UnicamCamera {
     cv::Mat getRGBFrame();
      cv::Mat getIRFrame();
      cv::Mat getDepthFrame();
+     void getAlignmentValues(int &hzAlign, int &vertAlign);
 
 public:
     XtionCamera(unicam_xtion::IOInterface *inf);

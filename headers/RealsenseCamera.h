@@ -35,7 +35,7 @@ public:
         cv::Mat depth;
         rs2::depth_frame depthFrame = this->current_frameset.get_depth_frame();
         try {
-            cv::Mat depth(cv::Size(640, 480), CV_8UC1, (void *) depthFrame.get_data(), cv::Mat::DEPTH_MASK);
+            depth = cv::Mat(cv::Size(640, 480), CV_16UC1, (void *) depthFrame.get_data(), cv::Mat::DEPTH_MASK);
         } catch (...) {
 
         }

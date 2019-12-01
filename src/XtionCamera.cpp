@@ -19,3 +19,7 @@ cv::Mat XtionCamera::getDepthFrame() {
 XtionCamera::XtionCamera(unicam_xtion::IOInterface *inf) {
 this->inf = inf;
 }
+
+void XtionCamera::getAlignmentValues(int &hzAlign, int &vertAlign) {
+
+}
