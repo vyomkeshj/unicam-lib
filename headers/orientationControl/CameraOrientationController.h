@@ -15,18 +15,19 @@ public:
     explicit CameraOrientationController(const char *arduinoPort );
     ~CameraOrientationController();
     cv::Vec3d recomputeNormal(cv::Mat &newDepthFrame);
-    bool isFrameNormal(cv::Mat &depthFrame);
+    bool isFrameNormal(cv::Mat & depthFrame, int *horizontalDisparity, int *verticalDisparity);
     void alignCamera(cv::Mat &newDepthFrame);
-    void realignDevice(int verticalness, int horizontalness);
-
+    void realignDevice(cv::Mat &depthFrame);
+    void computeDisparity(cv::Mat depthFrame);
+    float computeSqrAverageDistance(int centerCol, int centerRow, int sqrDim, cv::Mat depthFrame);
 private:
     int vertDiff, hzDiff = 0;
-    int vertPos, hzPos = 90;
+    int vertPos, hzPos = 120;
     int axesSize = 60;
 
-    int errorThreshold = 10;
-    int servoBaseInitPos = 90;
-    int servoTopInitPos = 90;
+    int errorThreshold = 2;
+    int servoBaseInitPos = 120;
+    int servoTopInitPos = 120;
     std::string arduinoPort;
     FILE *arduinoSerial;
     int hzNess, vertNess = 0;
