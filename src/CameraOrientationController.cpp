@@ -7,7 +7,6 @@
 #include "../headers/orientationControl/CameraOrientationController.h"
 
 
-
 /*
  * Controls the camera orientation control hardware to orient the camera's normal perpendicular to the wall's surface
  * INPUT: arduinoPort to communicate with, cv::Mat depthFrame to compute orientation against
@@ -17,20 +16,22 @@
  *
  *
  * **/
-CameraOrientationController::CameraOrientationController(const char *arduinoPort) {
+CameraOrientationController::CameraOrientationController(const char *arduinoPort, UnicamCamera* xtionCamera, UnicamDeviceProvider *xtion) : cameraControl(xtionCamera), xtion(xtion){
     this->arduinoPort = arduinoPort;
     arduinoSerial= fopen(arduinoPort, "w");
 }
 
 cv::Vec3d CameraOrientationController::recomputeNormal(cv::Mat &newDepthFrame) {
-     alignCamera(newDepthFrame);
+     //alignCamera(newDepthFrame);
 }
 
-void CameraOrientationController::alignCamera(cv::Mat &newDepthFrame) {
-
-    //isFrameNormal(newDepthFrame);
-    realignDevice(newDepthFrame);
-
+bool aligned = false;
+void CameraOrientationController::alignCamera() {
+    if(!aligned) {
+        realignDevice();
+    } else {
+        aligned = true;
+    }
 }
 
 template<int I>
@@ -59,8 +60,8 @@ bool CameraOrientationController::isFrameNormal(cv::Mat &depthFrame, int *horizo
     int shiftStrideBy = 5;
     int shiftingStrideBorders = 20;
 
-    int horizontalDirectionPointer = 0;
-    int verticalDirectionPointer = 0;
+    int horizontalDirectionPointer =0;
+    int verticalDirectionPointer =0;
 
     int iterCount = 1;
 
@@ -80,7 +81,7 @@ bool CameraOrientationController::isFrameNormal(cv::Mat &depthFrame, int *horizo
         }
     }
     verticalDirectionPointer/=iterCount;
-    verticalDirectionPointer = -verticalDirectionPointer;
+    //verticalDirectionPointer = -verticalDirectionPointer;
     std::cout<<"vertical disparity | = " <<verticalDirectionPointer<<std::endl;
 
     //perform corresponding pixel diff on the horizontal strides, shift stride each time
@@ -182,47 +183,32 @@ bool CameraOrientationController::isFrameNormal(cv::Mat &depthFrame) {
  * Sends vertpos:hzpos
  * **/
 
-int framecount = 25;
+
 int step = 1;
-void CameraOrientationController::realignDevice(cv::Mat &depthImage) {
-        if (framecount <= 0) {
-            framecount = 10;
-/**/    /*if (verticalness > errorThreshold/2 && servoTopInitPos > 30) {
-                servoBaseInitPos = servoBaseInitPos-step;
-                //fprintf(arduinoSerial, "%d:%d\n",servoBaseInitPos, servoTopInitPos);
-                //std::cout << servoTopInitPos << ":" << servoBaseInitPos << std::endl;
+bool realigned = false;
+void CameraOrientationController::realignDevice() {
+if(!realigned) {
+    for (int baseAngle = 147; baseAngle <= 154; baseAngle++) {
+        for (int topAngle = 78; topAngle <= 95; topAngle++) {
+            int verticalness, horizontalness;
+            xtion->spinOnce();
+            cv::Mat currentDepthImage = cameraControl->getDepthFrame();
+            isFrameNormal(currentDepthImage, &horizontalness, &verticalness);
+            cv::waitKey(100);
+            if (horizontalness < errorThreshold && horizontalness > -errorThreshold && verticalness < errorThreshold &&
+                verticalness > -errorThreshold) {
+                std::cout << "calibrated" << std::endl;
+            } else {
+                fprintf(arduinoSerial, "%d:%d\n", baseAngle, topAngle);
+                cv::waitKey(100);
 
-            } else if (verticalness < -errorThreshold/2 && servoTopInitPos < 160) {
-                servoBaseInitPos = servoBaseInitPos+step;
-
-                //fprintf(arduinoSerial, "%d:%d\n",servoTopInitPos,++servoBaseInitPos);
-               // std::cout << servoTopInitPos << ":" << servoBaseInitPos << std::endl;
+                std::cout << "top angle = " << topAngle << " bottom angle " << baseAngle << std::endl;
             }
-
-            if (horizontalness > errorThreshold/2 && servoBaseInitPos > 100) {
-                servoTopInitPos = servoTopInitPos-step;
-                //fprintf(arduinoSerial, "%d:%d\n", servoTopInitPos,--servoBaseInitPos);
-            } else if (horizontalness < -errorThreshold/2 && servoBaseInitPos < 160) {
-                servoTopInitPos = servoTopInitPos+step;
-                //fprintf(arduinoSerial, "%d:%d\n",servoTopInitPos,++servoBaseInitPos);
-
-            }*/
-
-            for(int baseAngle = 130; baseAngle<=140; baseAngle++) {
-                for(int topAngle = 70; topAngle<=120; topAngle++ ) {
-                    cv::waitKey(200);
-                    int verticalness, horizontalness;
-                    isFrameNormal(depthImage, horizontalness, verticalness);
-                    if(horizontalness<errorThreshold && horizontalness > -errorThreshold && verticalness <errorThreshold && verticalness >-errorThreshold) {
-                        std::cout<<"calibrated"<<std::endl;
-                    } else {
-                        fprintf(arduinoSerial, "%d:%d\n",topAngle,baseAngle);
-                    }
-                }
-            }
-        } else {
-            framecount--;
         }
+    }
+} else {
+    realigned = true;
+}
     }
 
     void CameraOrientationController::computeDisparity(cv::Mat depthFrame) {
