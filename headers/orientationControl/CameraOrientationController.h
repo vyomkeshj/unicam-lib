@@ -5,9 +5,10 @@
 #ifndef LIBUNICAM_CAMERAORIENTATIONCONTROLLER_H
 #define LIBUNICAM_CAMERAORIENTATIONCONTROLLER_H
 #define CAMERA_MINIMUM 400
-#define DISTANCE_TARGET 2000
 #define DISTANCE_ERROR_THRESHOLD 10
 
+#define FRAME_DIST_SQUARE_DIM 75   //adjust according to the distance tgt
+#define DISTANCE_TARGET 1000
 
 #include <string>
 #include <opencv2/core/mat.hpp>

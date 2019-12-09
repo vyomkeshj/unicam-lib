@@ -231,7 +231,7 @@ bool CameraOrientationController::persistMatrix(cv::Mat data, int count, int hz,
     } else {
         std::cout << "persisting frame = " <<nSavedFrames<< std::endl;
 
-        std::string fileName = "./xtion_at2/xtion-frame-stream-" + std::to_string(count) + ".yaml";
+        std::string fileName = "./xtion_at1/xtion-frame-stream-" + std::to_string(count) + ".yaml";
         async_buf sbuf(fileName);
 
         //cv::FileStorage writer(fileName, cv::FileStorage::WRITE);
@@ -258,11 +258,10 @@ bool CameraOrientationController::persistMatrix(cv::Mat data, int count, int hz,
 double CameraOrientationController::computeFrameCentralDistance(cv::Mat &depthFrame) {
     int width = depthFrame.cols;
     int height = depthFrame.rows;
-    int middleSquareDim = 150;
     float loopCounter = 0.0;
     float loopSumA = 0.0;
-    for(int y = height/2 - middleSquareDim/2; y<= height/2 + middleSquareDim/2; y++) {
-        for (int x = width/2 - middleSquareDim/2; x<= width/2+middleSquareDim/2; x++) {
+    for(int y = height/2 - FRAME_DIST_SQUARE_DIM/2; y<= height/2 + FRAME_DIST_SQUARE_DIM/2; y++) {
+        for (int x = width/2 - FRAME_DIST_SQUARE_DIM/2; x<= width/2+FRAME_DIST_SQUARE_DIM/2; x++) {
             ushort distance = depthFrame.at<ushort>(y,x);
 
             if(distance>CAMERA_MINIMUM) {           //try to filter out the bad distances
