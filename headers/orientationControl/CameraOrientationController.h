@@ -5,6 +5,9 @@
 #ifndef LIBUNICAM_CAMERAORIENTATIONCONTROLLER_H
 #define LIBUNICAM_CAMERAORIENTATIONCONTROLLER_H
 #define CAMERA_MINIMUM 400
+#define DISTANCE_TARGET 2000
+#define DISTANCE_ERROR_THRESHOLD 10
+
 
 #include <string>
 #include <opencv2/core/mat.hpp>
@@ -36,8 +39,6 @@ private:
     int vertPos, hzPos = 120;
     int axesSize = 60;
 
-    int distanceTarget = 2000;
-    int distanceErrorThreshold = 10;
     int errorThreshold = 15;
     int servoBaseInitPos = 120;
     int servoTopInitPos = 120;

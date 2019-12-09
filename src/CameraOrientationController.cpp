@@ -223,10 +223,10 @@ fclose(arduinoSerial);
 bool CameraOrientationController::persistMatrix(cv::Mat data, int count, int hz, int vert) {
 
     double centralDistance = computeFrameCentralDistance(data);
-    double absDistanceDifference = abs(centralDistance - distanceTarget);
-    if (absDistanceDifference > distanceErrorThreshold) {
+    double absDistanceDifference = abs(centralDistance - DISTANCE_TARGET);
+    if (absDistanceDifference > DISTANCE_ERROR_THRESHOLD) {
         std::cout << "please move the stand to "
-                  << distanceTarget << "it's currently at " << centralDistance << std::endl;
+                  << DISTANCE_TARGET << "it's currently at " << centralDistance << std::endl;
         return false;
     } else {
         std::cout << "persisting frame = " <<nSavedFrames<< std::endl;
