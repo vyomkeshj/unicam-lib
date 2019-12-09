@@ -23,8 +23,8 @@
         // Create a pipeline from the given device
         rs2::pipeline p;
         rs2::config c;                                                      //configuration of the camera
-        //c.enable_stream(RS2_STREAM_COLOR, 640, 480, RS2_FORMAT_BGR8, 30);  //choose the resolution and fps
-        //c.enable_stream(RS2_STREAM_INFRARED, 640, 480, RS2_FORMAT_Y8, 30); //Cannot be a random combination, please refer
+        c.enable_stream(RS2_STREAM_COLOR, 640, 480, RS2_FORMAT_BGR8, 30);  //choose the resolution and fps
+        c.enable_stream(RS2_STREAM_INFRARED, 640, 480, RS2_FORMAT_Y8, 30); //Cannot be a random combination, please refer
         c.enable_stream(RS2_STREAM_DEPTH, 640, 480, RS2_FORMAT_Z16, 30);//realsense documentation for available configurations.
         //.enable_all_streams();
 
@@ -67,7 +67,8 @@
             for (auto &&view : _devices) {
                 // Ask each pipeline if there are new frames available
                 rs2::frameset frameset;
-                if (view.second.pipe.poll_for_frames(&frameset)) {
+                if (view.second.pipe.try_wait_for_frames(&frameset)) {
+                    rs2::frame inf = frameset.get_infrared_frame();
                     view.second.current_frameset = frameset; //update view port with the new frameset
                 }
             }

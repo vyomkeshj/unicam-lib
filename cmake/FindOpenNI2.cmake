@@ -58,7 +58,7 @@ find_library(OpenNI2_LIBRARIES
              NAMES OpenNI2      # No suffix needed on Win64
                    libOpenNI2   # Linux
              PATHS "$ENV{OPENNI2_LIB${OPENNI2_SUFFIX}}"   # Windows default path, Win64 needs '64' suffix
-                   "$ENV{OPENNI2_REDIST}"                 # Linux install does not use a separate 'lib' directory
+                   "/usr/lib"                 # Linux install does not use a separate 'lib' directory
 )
 
 if(OpenNI2_INCLUDE_DIRS AND OpenNI2_LIBRARIES)

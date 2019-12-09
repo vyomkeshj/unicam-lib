@@ -20,7 +20,7 @@ public:
     bool isFrameNormal(cv::Mat & depthFrame, int *horizontalDisparity, int *verticalDisparity);
     void alignCamera();
     void realignDevice();
-    void computeDisparity(cv::Mat depthFrame);
+    void computeDisparity(cv::Mat &depthFrame, int *horizontalDisparity, int *verticalDisparity);
     float computeSqrAverageDistance(int centerCol, int centerRow, int sqrDim, cv::Mat depthFrame);
 private:
     int vertDiff, hzDiff = 0;

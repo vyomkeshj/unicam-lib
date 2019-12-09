@@ -57,8 +57,8 @@ bool CameraOrientationController::isFrameNormal(cv::Mat &depthFrame, int *horizo
     int midRow = height/2;
     int midCol = width/2;
 
-    int shiftStrideBy = 5;
-    int shiftingStrideBorders = 20;
+    int shiftStrideBy = 15;
+    int shiftingStrideBorders = 60;
 
     int horizontalDirectionPointer =0;
     int verticalDirectionPointer =0;
@@ -108,77 +108,7 @@ bool CameraOrientationController::isFrameNormal(cv::Mat &depthFrame, int *horizo
 
 }
 
-/*
 
-bool CameraOrientationController::isFrameNormal(cv::Mat &depthFrame) {
-    auto frame_data = depthFrame.data;
-    //std::cout<<&depthFrame<<std::endl;
-    int width = depthFrame.cols;
-    int height = depthFrame.rows;
-    int strideOffset = 50;
-    int strideWidth = 30;
-
-
-    int jumpWidth = depthFrame.step;
-    bool hzMatch = 0;
-    bool vertMatch = 0;
-
-    int loopCounter = 0;
-    int loopSumA = 0;
-    int loopSumB = 0;
-    for(int x = strideOffset; x<= width-strideOffset; x++) {
-        for (int y = strideOffset; y<= strideOffset+strideWidth; y++) {
-            loopCounter++;
-            loopSumA+=frame_data[x*width+y];
-        }
-    }
-    loopSumA/=loopCounter;
-    loopCounter = 0;
-    for(int x = strideOffset; x<= width-strideOffset; x++) {
-        for (int y = height-strideOffset-strideWidth; y<= height-strideOffset; y++) {
-            loopCounter++;
-            loopSumB+=frame_data[x*width+y];
-        }
-    }
-
-    loopSumB/=loopCounter;
-    hzMatch = abs(loopSumA-loopSumB) < errorThreshold;
-    std::cout<<"horizontalness:::::::::::::::::::::: "<<(loopSumA-loopSumB)<<std::endl;
-    hzNess = (hzNess + (loopSumA-loopSumB))/2;
-    loopCounter = 0;
-    loopSumA = 0;
-    loopSumB = 0;
-    for(int y = strideOffset; y<= height-strideOffset; y++) {
-        for (int x = strideOffset; x<= strideOffset+strideWidth; x++) {
-            if (frame_data[x*width+y] != 0) {
-                loopCounter++;
-                loopSumA += frame_data[x * width + y];
-            }
-        }
-    }
-    loopSumA/=loopCounter;
-    loopCounter = 0;
-    for(int y = strideOffset; y<= height-strideOffset; y++) {
-        for (int x = width-strideOffset-strideWidth; x<= width-strideOffset; x++) {
-            if (frame_data[x*width+y] != 0) {
-                loopCounter++;
-                loopSumB += frame_data[x * width + y];
-            }
-        }
-    }
-    loopSumB/=loopCounter;
-    vertMatch = abs(loopSumA-loopSumB) < errorThreshold;
-
-
-    std::cout<<"verticalness: "<<(loopSumA-loopSumB)<<std::endl;
-    vertNess = (vertNess + (loopSumA - loopSumB))/2;
-
-    if(!hzMatch || !vertMatch)
-    realignDevice(hzNess, vertNess);
-    return hzMatch && vertMatch;
-}
-
-*/
 /**
  * Sends vertpos:hzpos
  * **/
@@ -188,7 +118,7 @@ int step = 1;
 bool realigned = false;
 void CameraOrientationController::realignDevice() {
 if(!realigned) {
-    for (int baseAngle = 147; baseAngle <= 154; baseAngle++) {
+    for (int baseAngle = 145; baseAngle <= 160; baseAngle++) {
         for (int topAngle = 78; topAngle <= 95; topAngle++) {
             int verticalness, horizontalness;
             xtion->spinOnce();
@@ -211,7 +141,8 @@ if(!realigned) {
 }
     }
 
-    void CameraOrientationController::computeDisparity(cv::Mat depthFrame) {
+
+    void CameraOrientationController::computeDisparity(cv::Mat &depthFrame, int *horizontalDisparity, int *verticalDisparity) {
         int sqrDim = 10;
         int width = depthFrame.cols;
         int height = depthFrame.rows;
@@ -229,11 +160,12 @@ if(!realigned) {
 
         std::cout<<"vertical disparity   "<<verticalVect<<std::endl;
 
-
+        *verticalDisparity = verticalVect;
         float horizontalVect = computeSqrAverageDistance(midCol-boxCenterOffset, midRow, sqrDim, depthFrame)-
                              computeSqrAverageDistance(midCol+boxCenterOffset, midRow, sqrDim, depthFrame);
 
         std::cout<<"horizontal disparity   "<<horizontalVect<<std::endl;
+        *horizontalDisparity = horizontalVect;
 
         //cv::waitKey(500);
     }
@@ -245,16 +177,14 @@ float CameraOrientationController::computeSqrAverageDistance(int centerCol, int 
         const int type = CV_16U;
 
         int width = depthFrame.cols;
+        int height = depthFrame.cols;
 
-        int rows = centerRow-sqrDim/2;
-        int rowe = centerRow+sqrDim/2;
 
-        for(int row2 = rows; row2 < rowe; row2 = row2 + 1) {
-            std::cout<<std::endl;
+        for(int row = (centerRow-sqrDim/2); row <= (centerRow +(sqrDim/2)); row++) {
             for(int col = (centerCol-sqrDim/2); col<(centerCol+(sqrDim/2)); col++) {
 
                 //std::cout<<(depthFrame.at<CvType<type>::type_t>(row2, col))<<" ";
-                float val = depthFrame.at<CvType<type>::type_t>(row2, col);
+                float val = depthFrame.at<CvType<type>::type_t>(row, col);
 
                 if(val >= 400) {
                     //regionAverage +=frame_data[col*width+row];
@@ -262,16 +192,12 @@ float CameraOrientationController::computeSqrAverageDistance(int centerCol, int 
                     validPixelCount++;
                 }
             }
-
-            //std::cout<<validPixelCount<<std::endl;
-            return regionAverage/validPixelCount;
         }
-    }
+    std::cout<<regionAverage/validPixelCount<<std::endl;
+    return regionAverage/validPixelCount;
+
+}
 
 CameraOrientationController::~CameraOrientationController() {
 fclose(arduinoSerial);
 }
-
-
-
-

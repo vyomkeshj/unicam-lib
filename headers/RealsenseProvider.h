@@ -18,7 +18,7 @@ using namespace rs2;
  * **/
 class RealsenseProvider: public UnicamDeviceProvider {
 public:
-     void initializeCameras(){
+    void initializeCameras(){
         rs2::context ctx = provider.getContext();
         ctx.set_devices_changed_callback([&](rs2::event_information &info) {
             provider.removeDevices(info);
@@ -40,8 +40,8 @@ public:
         }
     }
 
-     std::list<string> getConnectedCameraTags();
-     void spinOnce() {provider.pollFrames();};    //updates the frames
+    std::list<string> getConnectedCameraTags();
+    void spinOnce() {provider.pollFrames();};    //updates the frames
 
     RealsenseCamera getCameraStream(const string &cameraSerial);
 

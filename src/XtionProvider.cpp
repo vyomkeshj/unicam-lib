@@ -2,14 +2,17 @@
 // Created by rob-ot on 19.11.19.
 //
 
+#include <iostream>
 #include "../headers/XtionProvider.h"
 #include "../headers/XtionCamera.h"
 
 void XtionProvider::initializeCameras() {
     ni_status = openni::OpenNI::initialize();
     ni_status = device.open(openni::ANY_DEVICE);
+    std::cout<<openni::OpenNI::getExtendedError()<<std::endl;
     if (ni_status != openni::STATUS_OK)
     {
+        std::cout<<ni_status<<std::endl;
         openni::OpenNI::shutdown();
     }
     depth = new openni::VideoStream();
