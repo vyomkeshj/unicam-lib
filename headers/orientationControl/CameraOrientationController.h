@@ -4,7 +4,7 @@
 
 #ifndef LIBUNICAM_CAMERAORIENTATIONCONTROLLER_H
 #define LIBUNICAM_CAMERAORIENTATIONCONTROLLER_H
-
+#define CAMERA_MINIMUM 400
 
 #include <string>
 #include <opencv2/core/mat.hpp>
@@ -14,20 +14,31 @@
 
 class CameraOrientationController {
 public:
+
+    struct frameData {
+        cv::Mat depthFrame;
+        std::string timestamp;
+        float centralDistance;
+    };
+
     explicit CameraOrientationController(const char *arduinoPort , UnicamCamera *camera, UnicamDeviceProvider *xtion);
     ~CameraOrientationController();
     cv::Vec3d recomputeNormal(cv::Mat &newDepthFrame);
     bool isFrameNormal(cv::Mat & depthFrame, int *horizontalDisparity, int *verticalDisparity);
+    void computeDisparity(cv::Mat &depthFrame, int *horizontalDisparity, int *verticalDisparity);
+
     void alignCamera();
     void realignDevice();
-    void computeDisparity(cv::Mat &depthFrame, int *horizontalDisparity, int *verticalDisparity);
+    bool persistMatrix(cv::Mat data, int count, int hz, int vert);
     float computeSqrAverageDistance(int centerCol, int centerRow, int sqrDim, cv::Mat depthFrame);
 private:
     int vertDiff, hzDiff = 0;
     int vertPos, hzPos = 120;
     int axesSize = 60;
 
-    int errorThreshold = 60;
+    int distanceTarget = 2000;
+    int distanceErrorThreshold = 10;
+    int errorThreshold = 15;
     int servoBaseInitPos = 120;
     int servoTopInitPos = 120;
     std::string arduinoPort;
@@ -35,6 +46,8 @@ private:
     int hzNess, vertNess = 0;
     UnicamCamera* cameraControl;
     UnicamDeviceProvider *xtion;
+
+    double computeFrameCentralDistance(cv::Mat &depthFrame);
 };
 
 

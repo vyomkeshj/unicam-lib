@@ -5,6 +5,7 @@
 #include <iostream>
 #include <opencv2/opencv.hpp>
 #include "../headers/orientationControl/CameraOrientationController.h"
+#include "../headers/async_buf.h"
 
 
 /*
@@ -100,7 +101,7 @@ bool CameraOrientationController::isFrameNormal(cv::Mat &depthFrame, int *horizo
     }
 
     horizontalDirectionPointer/=iterCount;
-    std::cout<<"                horizontal disparity  --- = " <<horizontalDirectionPointer<<std::endl;
+   // std::cout<<"                horizontal disparity  --- = " <<horizontalDirectionPointer<<std::endl;
     *horizontalDisparity = horizontalDirectionPointer;
     *verticalDisparity = verticalDirectionPointer;
     //horizontalDirectionPointer = -horizontalDirectionPointer;
@@ -113,7 +114,7 @@ bool CameraOrientationController::isFrameNormal(cv::Mat &depthFrame, int *horizo
  * Sends vertpos:hzpos
  * **/
 
-
+int nSavedFrames = 150;
 int step = 1;
 bool realigned = false;
 void CameraOrientationController::realignDevice() {
@@ -123,15 +124,21 @@ if(!realigned) {
             int verticalness, horizontalness;
             xtion->spinOnce();
             cv::Mat currentDepthImage = cameraControl->getDepthFrame();
-            isFrameNormal(currentDepthImage, &horizontalness, &verticalness);
+            computeDisparity(currentDepthImage, &horizontalness, &verticalness);
             cv::waitKey(100);
             if (horizontalness < errorThreshold && horizontalness > -errorThreshold && verticalness < errorThreshold &&
                 verticalness > -errorThreshold) {
                 std::cout << "calibrated" << std::endl;
-            } else {
-                fprintf(arduinoSerial, "%d:%d\n", baseAngle, topAngle);
-                cv::waitKey(100);
 
+                if(nSavedFrames>0) {
+                    bool persisted = persistMatrix(currentDepthImage, nSavedFrames, horizontalness, verticalness);
+                    if(persisted)
+                    nSavedFrames--;
+                } else {
+                    std::cout<<"writing the matrices to file is now complete"<<std::endl;
+                    exit(112); //exit the program when the writing is done
+                }
+            } else {
                 std::cout << "top angle = " << topAngle << " bottom angle " << baseAngle << std::endl;
             }
         }
@@ -158,15 +165,26 @@ if(!realigned) {
         float verticalVect = computeSqrAverageDistance(midCol, midRow-boxCenterOffset, sqrDim, depthFrame)-
                 computeSqrAverageDistance(midCol, midRow+boxCenterOffset, sqrDim, depthFrame);
 
-        std::cout<<"vertical disparity   "<<verticalVect<<std::endl;
 
         *verticalDisparity = verticalVect;
         float horizontalVect = computeSqrAverageDistance(midCol-boxCenterOffset, midRow, sqrDim, depthFrame)-
                              computeSqrAverageDistance(midCol+boxCenterOffset, midRow, sqrDim, depthFrame);
 
-        std::cout<<"horizontal disparity   "<<horizontalVect<<std::endl;
         *horizontalDisparity = horizontalVect;
 
+        if (horizontalVect < errorThreshold && horizontalVect > -errorThreshold && verticalVect < errorThreshold &&
+            verticalVect > -errorThreshold) {
+
+
+            if(nSavedFrames>0) {
+
+                bool persisted = persistMatrix(depthFrame, nSavedFrames, horizontalVect, verticalVect);
+                if(persisted)
+                nSavedFrames--;
+            }
+        } else {
+            std::cout<<"horizontal disparity   "<<horizontalVect<<"  vertical disparity = "<<verticalVect<<std::endl;
+        }
         //cv::waitKey(500);
     }
 
@@ -186,18 +204,72 @@ float CameraOrientationController::computeSqrAverageDistance(int centerCol, int 
                 //std::cout<<(depthFrame.at<CvType<type>::type_t>(row2, col))<<" ";
                 float val = depthFrame.at<CvType<type>::type_t>(row, col);
 
-                if(val >= 400) {
+                if(val >= CAMERA_MINIMUM) {
                     //regionAverage +=frame_data[col*width+row];
                     regionAverage += val;
                     validPixelCount++;
                 }
             }
         }
-    std::cout<<regionAverage/validPixelCount<<std::endl;
+    //std::cout<<regionAverage/validPixelCount<<std::endl;
     return regionAverage/validPixelCount;
 
 }
 
 CameraOrientationController::~CameraOrientationController() {
 fclose(arduinoSerial);
+}
+
+bool CameraOrientationController::persistMatrix(cv::Mat data, int count, int hz, int vert) {
+
+    double centralDistance = computeFrameCentralDistance(data);
+    double absDistanceDifference = abs(centralDistance - distanceTarget);
+    if (absDistanceDifference > distanceErrorThreshold) {
+        std::cout << "please move the stand to "
+                  << distanceTarget << "it's currently at " << centralDistance << std::endl;
+        return false;
+    } else {
+        std::cout << "persisting frame = " <<nSavedFrames<< std::endl;
+
+        std::string fileName = "./xtion_at2/xtion-frame-stream-" + std::to_string(count) + ".yaml";
+        async_buf sbuf(fileName);
+
+        //cv::FileStorage writer(fileName, cv::FileStorage::WRITE);
+        std::ostream astream(&sbuf);
+
+        std::time_t result = std::time(nullptr);
+
+
+        astream << "timestamp: " << std::asctime(std::localtime(&result)) << '\n';
+        astream << "distance: " << centralDistance << '\n';
+        astream << "horizontalness: " << hz << '\n';
+        astream << "verticalness: " << vert << '\n';
+
+        astream << "matrix: " << '\n';
+        astream << "rows: " << data.rows << '\n';
+        astream << "cols: " << data.cols << '\n';
+        astream << "dt: " << "f" << '\n';
+        astream << "data: " << data << '\n' << std::flush;
+        return true;
+    }
+}
+
+//computes the average distance from the wall
+double CameraOrientationController::computeFrameCentralDistance(cv::Mat &depthFrame) {
+    int width = depthFrame.cols;
+    int height = depthFrame.rows;
+    int middleSquareDim = 150;
+    float loopCounter = 0.0;
+    float loopSumA = 0.0;
+    for(int y = height/2 - middleSquareDim/2; y<= height/2 + middleSquareDim/2; y++) {
+        for (int x = width/2 - middleSquareDim/2; x<= width/2+middleSquareDim/2; x++) {
+            ushort distance = depthFrame.at<ushort>(y,x);
+
+            if(distance>CAMERA_MINIMUM) {           //try to filter out the bad distances
+                loopCounter++;
+                loopSumA +=distance;
+            }
+        }
+    }
+    return loopSumA/loopCounter;        //mean distance
 }

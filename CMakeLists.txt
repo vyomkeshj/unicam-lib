@@ -12,7 +12,7 @@ message (${libunicam_SOURCE_DIR})
 FIND_PACKAGE(PkgConfig)    # try find PKGConfig as it will be used if found
 LIST(APPEND CMAKE_MODULE_PATH ${freenect2_ROOT_DIR}/cmake_modules) # FindGLFW3.cmake
 
-
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -pthread")
 
 FIND_PACKAGE(realsense2 REQUIRED)
 
