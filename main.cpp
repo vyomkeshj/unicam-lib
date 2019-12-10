@@ -14,9 +14,7 @@ int main() {
     while (true) {
         xtion->spinOnce();
         cv::Mat matrix = camera->getDepthFrame();
-        controller->alignCamera();
-        std::cout << matrix;
+        controller->realignDevice();
     }
 
-    return (0);
 }

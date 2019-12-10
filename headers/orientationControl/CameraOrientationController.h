@@ -8,7 +8,11 @@
 #define DISTANCE_ERROR_THRESHOLD 10
 
 #define FRAME_DIST_SQUARE_DIM 75   //adjust according to the distance tgt
-#define DISTANCE_TARGET 1000
+#define DISTANCE_TARGET 1350
+
+#define ORIENTATION_THRESHOLD 20
+#define SAVE_DIR "frames_xtion_1"
+#define FILENAME_BASE "frame_xtion_"
 
 #include <string>
 #include <opencv2/core/mat.hpp>
@@ -33,6 +37,7 @@ public:
 
     void alignCamera();
     void realignDevice();
+    void realignDeviceZ();
     bool persistMatrix(cv::Mat data, int count, int hz, int vert);
     float computeSqrAverageDistance(int centerCol, int centerRow, int sqrDim, cv::Mat depthFrame);
 private:
@@ -40,7 +45,6 @@ private:
     int vertPos, hzPos = 120;
     int axesSize = 60;
 
-    int errorThreshold = 15;
     int servoBaseInitPos = 120;
     int servoTopInitPos = 120;
     std::string arduinoPort;
