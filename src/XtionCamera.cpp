@@ -5,7 +5,7 @@
 #include "../headers/XtionCamera.h"
 
 cv::Mat XtionCamera::getRGBFrame() {
-    return inf->getColorFrame();
+    return XtionCamera::getRGBFrame();
 }
 
 cv::Mat XtionCamera::getIRFrame() {

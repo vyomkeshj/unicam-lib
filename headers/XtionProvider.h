@@ -26,7 +26,7 @@ private:
 
     openni::Status ni_status = openni::STATUS_OK;
     openni::Device device;
-    openni::VideoStream *depth, *color;
+    openni::VideoStream *depth;
 
     unicam_xtion::IOInterface* iface;
 };

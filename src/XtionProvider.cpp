@@ -16,9 +16,17 @@ void XtionProvider::initializeCameras() {
         openni::OpenNI::shutdown();
     }
     depth = new openni::VideoStream();
-    color = new openni::VideoStream();
+
+
 
     ni_status = depth->create(device, openni::SENSOR_DEPTH);  //fixme: crashes here
+
+    const openni::SensorInfo* sinfo = device.getSensorInfo(openni::SENSOR_DEPTH);
+    const openni::Array< openni::VideoMode>& modesDepth = sinfo->getSupportedVideoModes();
+    depth->stop();
+    depth->setVideoMode(modesDepth[0]);
+
+
     if (ni_status == openni::STATUS_OK)
     {
         ni_status = depth->start();
@@ -33,28 +41,14 @@ void XtionProvider::initializeCameras() {
         //ROS_WARN("SimpleViewer: Couldn't find depth stream:\n%s", openni::OpenNI::getExtendedError());
     }
 
-    ni_status = color->create(device, openni::SENSOR_COLOR);
-    if (ni_status == openni::STATUS_OK)
-    {
-        ni_status = color->start();
-        if (ni_status != openni::STATUS_OK)
-        {
-            //ROS_WARN("SimpleViewer: Couldn't start color stream:\n%s", openni::OpenNI::getExtendedError());
-            color->destroy();
-        }
-    }
-    else
-    {
-        //ROS_WARN("SimpleViewer: Couldn't find color stream:\n%s", openni::OpenNI::getExtendedError());
-    }
 
-    if (!depth->isValid() || !color->isValid())
+    if (!depth->isValid())
     {
         //ROS_ERROR("SimpleViewer: No valid streams. Exiting");
         openni::OpenNI::shutdown();
     }
 
-    iface = new unicam_xtion::IOInterface(device, *depth, *color);
+    iface = new unicam_xtion::IOInterface(device, *depth);
 
     iface->initialize();
     iface->spinOnce();

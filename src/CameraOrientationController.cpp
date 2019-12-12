@@ -23,6 +23,7 @@ CameraOrientationController::CameraOrientationController(const char *arduinoPort
     this->arduinoPort = arduinoPort;
     arduinoSerial = fopen(arduinoPort, "w");
     cv::waitKey(500);
+    if(arduinoSerial)
     fprintf(arduinoSerial, "%d:%d\n",90,150);
     cv::waitKey(2500);
 
@@ -129,9 +130,9 @@ bool CameraOrientationController::isFrameNormal(cv::Mat &depthFrame, int *horizo
  * Sends vertpos:hzpos
  * **/
 
-int nSavedFrames = 150;
+int nSavedFrames = 50;
 bool persistDelayMade= false;
-void CameraOrientationController::realignDevice() {
+void CameraOrientationController::realignDevice(bool &isAlignmentComplete) {
 
         for (int baseAngle = 150; baseAngle <= 158; baseAngle++) {
             for (int topAngle = 88; topAngle <= 98; topAngle++) {
@@ -141,7 +142,7 @@ void CameraOrientationController::realignDevice() {
                 computeDisparity(currentDepthImage, &horizontalness, &verticalness);
                 cv::waitKey(100);
                 if (aligned) {
-                    std::cout << "calibrated" << std::endl;
+                    std::cout << "frame normal!" << std::endl;
 
                     if (nSavedFrames > 0) {
                         bool persisted = persistMatrix(currentDepthImage, nSavedFrames, horizontalness, verticalness);
@@ -149,24 +150,22 @@ void CameraOrientationController::realignDevice() {
                             nSavedFrames--;
                     } else {
                         std::cout << "writing the matrices to file is now complete" << std::endl;
-                        exit(112); //exit the program when the writing is done
+                        isAlignmentComplete = true;
+                        persistDelayMade = false;
+                        nSavedFrames = 50;
+                        return;
                     }
-            }
-                if(!aligned) {
+            } else {
                     persistDelayMade = false; // make delay again when realigned
                     std::cout << "updating angles :: top angle = " << topAngle << " bottom angle " << baseAngle
                               << std::endl;
                     cv::waitKey(100);
+                    if(arduinoSerial)
                     fprintf(arduinoSerial, "%d:%d\n", baseAngle, topAngle);
                     cv::waitKey(100);
                 }
             }
     }
-}
-
-bool alignedZ = false;
-void CameraOrientationController::realignDeviceZ() {
-
 }
 
 void CameraOrientationController::computeDisparity(cv::Mat &depthFrame, int *horizontalDisparity, int *verticalDisparity) {
@@ -238,22 +237,23 @@ CameraOrientationController::~CameraOrientationController() {
 bool CameraOrientationController::persistMatrix(cv::Mat data, int count, int hz, int vert) {
 
     double centralDistance = computeFrameCentralDistance(data);
-    double absDistanceDifference = abs(centralDistance - DISTANCE_TARGET);
+    double absDistanceDifference = abs(centralDistance - distanceTarget);
     if (absDistanceDifference > DISTANCE_ERROR_THRESHOLD) {
         std::cout << "please move the stand to "
-                  << DISTANCE_TARGET << "it's currently at " << centralDistance << std::endl;
+                  << distanceTarget << "it's currently at " << centralDistance << std::endl;
         return false;
     } else {
         if(!persistDelayMade) {
-            std::cout<<"delaying write by 5 seconds..."<<std::endl;
-            cv::waitKey(5000);
+            std::cout<<"delaying write by 10 seconds..."<<std::endl;
+            cv::waitKey(10000);
             persistDelayMade = true;
             std::cout<<"writing now"<<std::endl;
         }
 
         std::cout << "persisting frame = " << nSavedFrames << std::endl;
 
-        std::string fileName = "./xtion_at1/xtion-frame-stream-" + std::to_string(count) + ".yaml";
+        std::string fileName = "./depth"+std::to_string(distanceTarget)+"/xtion-frame-stream-" + std::to_string(count) + ".yaml";
+        std::cout<<"saving to file: "<<fileName<<std::endl;
         async_buf sbuf(fileName);
 
         //cv::FileStorage writer(fileName, cv::FileStorage::WRITE);
@@ -293,4 +293,8 @@ double CameraOrientationController::computeFrameCentralDistance(cv::Mat &depthFr
         }
     }
     return loopSumA / loopCounter;        //mean distance
+}
+
+void CameraOrientationController::updateDistanceTarget(int newTarget) {
+    distanceTarget = newTarget;
 }

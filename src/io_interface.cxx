@@ -5,8 +5,8 @@
 
 namespace unicam_xtion
 {
-IOInterface::IOInterface(openni::Device& device, openni::VideoStream& depth, openni::VideoStream& color)
-  : device_(device), depth_stream_(depth), color_stream_(color), color_new(false), depth_new(false)
+IOInterface::IOInterface(openni::Device& device, openni::VideoStream& depth)
+  : device_(device), depth_stream_(depth), depth_new(false)
 {
 }
 
@@ -32,22 +32,12 @@ bool IOInterface::initialize()
   if (!validateStream(depth_stream_, "Depth"))
     return false;
 
-  const auto color_resolution = initialize_stream(color_stream_);
-  if (!validateStream(color_stream_, "Color"))
-    return false;
 
-  if (color_resolution != depth_resolution)
-  {
-    std::cout<<("Expect color and depth to be in same resolution: D: %dx%d, C: %dx%d", depth_resolution[0],
-              depth_resolution[1], color_resolution[0], color_resolution[1]);
-    return false;
-  }
 
-  width_ = color_resolution[0];
-  height_ = color_resolution[1];
+  width_ = depth_resolution[0];
+  height_ = depth_resolution[1];
 
   streams_[0] = &depth_stream_;
-  streams_[1] = &color_stream_;
 
   return true;
 }
@@ -75,10 +65,6 @@ void IOInterface::spinOnce()
       //! \todo Figure out how to use the timestamp from the frame.
       depth_stream_.readFrame(&depth_frame_);
       depth_new = true;
-      break;
-    case 1:
-      color_stream_.readFrame(&color_frame_);
-      color_new = true;
       break;
     default:
       std::cout<<("Failed waiting for next frame.");

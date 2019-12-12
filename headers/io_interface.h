@@ -16,11 +16,9 @@ namespace unicam_xtion
 class IOInterface
 {
   openni::VideoFrameRef depth_frame_;
-  openni::VideoFrameRef color_frame_;
 
   openni::Device& device_;
   openni::VideoStream& depth_stream_;
-  openni::VideoStream& color_stream_;
   std::array<openni::VideoStream*, 2> streams_;
 
   int width_;
@@ -31,10 +29,9 @@ class IOInterface
   const cv::Mat getFrame(openni::VideoFrameRef& frame, const int data_type);
 
 public:
-  bool color_new;
   bool depth_new;
 
-  IOInterface(openni::Device& device, openni::VideoStream& depth, openni::VideoStream& color);
+  IOInterface(openni::Device& device, openni::VideoStream& depth);
 
   bool initialize();
   void spinOnce();
@@ -49,10 +46,6 @@ public:
     return height_;
   }
 
-  inline const cv::Mat getColorFrame()
-  {
-    return getFrame(color_frame_, CV_8UC3);
-  }
 
   inline const cv::Mat getDepthFrame()
   {
@@ -61,7 +54,7 @@ public:
 
   inline bool framesValid()
   {
-    return color_frame_.isValid() && depth_frame_.isValid();
+    return  depth_frame_.isValid();
   }
 };
 }  // namespace unicam_xtion
