@@ -23,7 +23,7 @@ int main() {
             mkdir(("depth"+std::to_string(setDistance)).c_str(), 0777);
             controller->updateDistanceTarget(setDistance);
 
-            std::cout<<std::endl<<"the distance has been set to "<<setDistance<<std::endl;
+            std::cout<<std::endl<<" the distance has been set to "<<setDistance<<std::endl;
 
         }
         controller->realignDevice(saved);

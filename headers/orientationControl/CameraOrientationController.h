@@ -19,6 +19,7 @@
 #include <fstream>
 #include "../unicam/UnicamCamera.h"
 #include "../unicam/UnicamDeviceProvider.h"
+#include "../frame_data.h"
 
 class CameraOrientationController {
 public:
@@ -31,15 +32,14 @@ public:
 
     explicit CameraOrientationController(const char *arduinoPort , UnicamCamera *camera, UnicamDeviceProvider *xtion);
     ~CameraOrientationController();
-    cv::Vec3d recomputeNormal(cv::Mat &newDepthFrame);
     bool isFrameNormal(cv::Mat & depthFrame, int *horizontalDisparity, int *verticalDisparity);
     void computeDisparity(cv::Mat &depthFrame, int *horizontalDisparity, int *verticalDisparity);
 
     void updateDistanceTarget(int newDistanceTarget);
-    void alignCamera();
     void realignDevice(bool &isAlignmentComplete);
-    void realignDeviceZ();
-    bool persistMatrix(cv::Mat data, int count, int hz, int vert);
+    bool persistMatrixToFile(cv::Mat data, int count, int hz, int vert);
+    bool persistMatrixToList(cv::Mat data, int count, int hz, int vert);
+
     float computeSqrAverageDistance(int centerCol, int centerRow, int sqrDim, cv::Mat depthFrame);
 private:
     int vertDiff, hzDiff = 0;
@@ -54,6 +54,7 @@ private:
     int hzNess, vertNess = 0;
     UnicamCamera* cameraControl;
     UnicamDeviceProvider *xtion;
+    std::list<frame_data> frameDataList;
 
     double computeFrameCentralDistance(cv::Mat &depthFrame);
 };

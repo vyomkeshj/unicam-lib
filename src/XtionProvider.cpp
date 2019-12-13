@@ -32,19 +32,16 @@ void XtionProvider::initializeCameras() {
         ni_status = depth->start();
         if (ni_status != openni::STATUS_OK)
         {
-            //ROS_WARN("SimpleViewer: Couldn't start depth stream:\n%s", openni::OpenNI::getExtendedError());
             depth->destroy();
         }
     }
     else
     {
-        //ROS_WARN("SimpleViewer: Couldn't find depth stream:\n%s", openni::OpenNI::getExtendedError());
     }
 
 
     if (!depth->isValid())
     {
-        //ROS_ERROR("SimpleViewer: No valid streams. Exiting");
         openni::OpenNI::shutdown();
     }
 

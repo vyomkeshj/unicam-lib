@@ -17,19 +17,8 @@
  *
  *
  * **/
-CameraOrientationController::CameraOrientationController(const char *arduinoPort, UnicamCamera *xtionCamera,
-                                                         UnicamDeviceProvider *xtion) : cameraControl(xtionCamera),
-                                                                                        xtion(xtion) {
-    this->arduinoPort = arduinoPort;
-    arduinoSerial = fopen(arduinoPort, "w");
-    cv::waitKey(500);
-    if(arduinoSerial)
-    fprintf(arduinoSerial, "%d:%d\n",90,150);
-    cv::waitKey(2500);
 
-}
 
-bool aligned = false;
 
 
 template<int I>
@@ -53,6 +42,23 @@ template<>
 struct CvType<CV_16U> {
     typedef unsigned short type_t;
 };
+bool aligned = false;
+int nSavedFrames = 50;
+bool persistDelayMade= false;
+bool persistedToStorage = false;
+
+CameraOrientationController::CameraOrientationController(const char *arduinoPort, UnicamCamera *xtionCamera,
+                                                         UnicamDeviceProvider *xtion) : cameraControl(xtionCamera),
+                                                                                        xtion(xtion) {
+    this->arduinoPort = arduinoPort;
+    arduinoSerial = fopen(arduinoPort, "w");
+    cv::waitKey(500);
+    if(arduinoSerial)
+    fprintf(arduinoSerial, "%d:%d\n",90,150);
+    cv::waitKey(2500);
+
+}
+
 
 
 bool CameraOrientationController::isFrameNormal(cv::Mat &depthFrame, int *horizontalDisparity, int *verticalDisparity) {
@@ -130,8 +136,6 @@ bool CameraOrientationController::isFrameNormal(cv::Mat &depthFrame, int *horizo
  * Sends vertpos:hzpos
  * **/
 
-int nSavedFrames = 50;
-bool persistDelayMade= false;
 void CameraOrientationController::realignDevice(bool &isAlignmentComplete) {
 
         for (int baseAngle = 150; baseAngle <= 158; baseAngle++) {
@@ -144,19 +148,20 @@ void CameraOrientationController::realignDevice(bool &isAlignmentComplete) {
                 if (aligned) {
                     std::cout << "frame normal!" << std::endl;
 
-                    if (nSavedFrames > 0) {
-                        bool persisted = persistMatrix(currentDepthImage, nSavedFrames, horizontalness, verticalness);
-                        if (persisted)
-                            nSavedFrames--;
+                    if (!persistedToStorage) {
+                        persistMatrixToList(currentDepthImage, nSavedFrames, horizontalness,
+                                                             verticalness);
+
                     } else {
                         std::cout << "writing the matrices to file is now complete" << std::endl;
                         isAlignmentComplete = true;
                         persistDelayMade = false;
+                        persistedToStorage = false;
                         nSavedFrames = 50;
                         return;
                     }
             } else {
-                    persistDelayMade = false; // make delay again when realigned
+                    //persistDelayMade = false; // make delay again when realigned
                     std::cout << "updating angles :: top angle = " << topAngle << " bottom angle " << baseAngle
                               << std::endl;
                     cv::waitKey(100);
@@ -234,7 +239,7 @@ CameraOrientationController::~CameraOrientationController() {
     fclose(arduinoSerial);
 }
 
-bool CameraOrientationController::persistMatrix(cv::Mat data, int count, int hz, int vert) {
+bool CameraOrientationController::persistMatrixToList(cv::Mat data, int centralDist, int hz, int vert) {
 
     double centralDistance = computeFrameCentralDistance(data);
     double absDistanceDifference = abs(centralDistance - distanceTarget);
@@ -249,6 +254,33 @@ bool CameraOrientationController::persistMatrix(cv::Mat data, int count, int hz,
             persistDelayMade = true;
             std::cout<<"writing now"<<std::endl;
         }
+
+        if (frameDataList.size() < nSavedFrames) {
+            frame_data dataM(data, "1234", centralDist, hz, vert);
+            frameDataList.emplace_back(dataM);
+        } else {
+            int fileCount = 0;
+            for (frame_data dataFrame: frameDataList) {
+                persistMatrixToFile(dataFrame.depthFrame, fileCount, dataFrame.hzDisparity, dataFrame.vertDisparity);
+                fileCount++;
+            }
+            frameDataList.clear();    //clear the list for next measurement
+            persistedToStorage = true;
+            persistDelayMade = false;
+        }
+        return true;
+    }
+}
+
+
+bool CameraOrientationController::persistMatrixToFile(cv::Mat data, int count, int hz, int vert) {
+    double centralDistance = computeFrameCentralDistance(data);
+    double absDistanceDifference = abs(centralDistance - distanceTarget);
+    if (absDistanceDifference > DISTANCE_ERROR_THRESHOLD) {
+        std::cout << "please move the stand to "
+                  << distanceTarget << "it's currently at " << centralDistance << std::endl;
+        return false;
+    } else {
 
         std::cout << "persisting frame = " << nSavedFrames << std::endl;
 
@@ -276,6 +308,8 @@ bool CameraOrientationController::persistMatrix(cv::Mat data, int count, int hz,
     }
 }
 
+
+
 //computes the average distance from the wall
 double CameraOrientationController::computeFrameCentralDistance(cv::Mat &depthFrame) {
     int width = depthFrame.cols;
@@ -298,3 +332,4 @@ double CameraOrientationController::computeFrameCentralDistance(cv::Mat &depthFr
 void CameraOrientationController::updateDistanceTarget(int newTarget) {
     distanceTarget = newTarget;
 }
+

@@ -56,7 +56,7 @@ add_executable(libunicam
         headers/freenectCamera.h
         headers/FreenectProvider.h
         src/freenectCamera.cpp
-        src/FreenectProvider.cpp)
+        src/FreenectProvider.cpp headers/frame_data.h)
 
 target_link_libraries(libunicam ${LINK_LIBS}
                                 libSenDuck.so

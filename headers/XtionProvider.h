@@ -8,6 +8,7 @@
 
 #include "unicam/UnicamDeviceProvider.h"
 #include "../headers/io_interface.h"
+#include "frame_data.h"
 
 class XtionProvider : public UnicamDeviceProvider{
 public:
@@ -27,6 +28,7 @@ private:
     openni::Status ni_status = openni::STATUS_OK;
     openni::Device device;
     openni::VideoStream *depth;
+
 
     unicam_xtion::IOInterface* iface;
 };
