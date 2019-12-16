@@ -7,12 +7,7 @@
 #define CAMERA_MINIMUM 400
 #define DISTANCE_ERROR_THRESHOLD 10
 
-#define FRAME_DIST_SQUARE_DIM 70   //adjust according to the distance tgt
-#define DISTANCE_TARGET 2506
-
 #define ORIENTATION_THRESHOLD 60
-#define SAVE_DIR "frames_xtion_1"
-#define FILENAME_BASE "frame_xtion_"
 
 #include <string>
 #include <opencv2/core/mat.hpp>
@@ -24,39 +19,32 @@
 class CameraOrientationController {
 public:
 
-    struct frameData {
-        cv::Mat depthFrame;
-        std::string timestamp;
-        float centralDistance;
-    };
-
     explicit CameraOrientationController(const char *arduinoPort , UnicamCamera *camera, UnicamDeviceProvider *xtion);
-    ~CameraOrientationController();
-    bool isFrameNormal(cv::Mat & depthFrame, int *horizontalDisparity, int *verticalDisparity);
-    void computeDisparity(cv::Mat &depthFrame, int *horizontalDisparity, int *verticalDisparity);
 
     void updateDistanceTarget(int newDistanceTarget);
-    void realignDevice(bool &isAlignmentComplete);
-    bool persistMatrixToFile(cv::Mat data, int count, int hz, int vert);
-    bool persistMatrixToList(cv::Mat data, int count, int hz, int vert);
+    bool realignDevice(cv::Mat &alignedDepthFrame);     //returns true if aligned, parameter is the reference to the current depth frame
+    bool isAtExpectedDistance(cv::Mat currentMatrix);
+    bool bufferedWriteToFile(cv::Mat data);
 
-    float computeSqrAverageDistance(int centerCol, int centerRow, int sqrDim, cv::Mat depthFrame);
+    ~CameraOrientationController();
+
 private:
-    int vertDiff, hzDiff = 0;
-    int vertPos, hzPos = 120;
-    int axesSize = 60;
+
+    int nSavedFrames = 50;
 
     int distanceTarget = 1000;
-    int servoBaseInitPos = 120;
-    int servoTopInitPos = 120;
     std::string arduinoPort;
     FILE *arduinoSerial;
-    int hzNess, vertNess = 0;
     UnicamCamera* cameraControl;
     UnicamDeviceProvider *xtion;
     std::list<frame_data> frameDataList;
 
-    double computeFrameCentralDistance(cv::Mat &depthFrame);
+    bool isAligned(cv::Mat depthFrame);
+    double getDistanceFromCenterOfSurface(cv::Mat &depthFrame);
+    bool persistMatrixToFile(cv::Mat data, int index, int hz, int vert, int centralDist);
+    float computeAverageDistanceInPixelRegion(int centerCol, int centerRow, int sqrDim, cv::Mat depthFrame);
+    void computeDisparity(cv::Mat &depthFrame, int *horizontalDisparity, int *verticalDisparity);
+
 };
 
 
